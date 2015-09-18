@@ -44,7 +44,7 @@
 #include <QtGui/QMatrix4x4>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QScreen>
-
+#include <iostream>
 #include <QtCore/qmath.h>
 
 //! [1]
@@ -55,6 +55,8 @@ public:
 
     void initialize() Q_DECL_OVERRIDE;
     void render() Q_DECL_OVERRIDE;
+    //fonction qui permet la generation du damier
+    GLfloat* generateDamier(int largeur, int longeur);
 
 private:
     GLuint loadShader(GLenum type, const char *source);
@@ -131,6 +133,47 @@ void TriangleWindow::initialize()
     m_colAttr = m_program->attributeLocation("colAttr");
     m_matrixUniform = m_program->uniformLocation("matrix");
 }
+//fonction generateDamier
+GLfloat *TriangleWindow::generateDamier(int largeur, int longeur)
+{
+    GLfloat* damier = new GLfloat[largeur*longeur*4];
+    GLfloat espacePoint = 0.1f;
+    GLfloat pointInitialLong = 1.5f;
+    GLfloat pointInitialLarg = 1.5f;
+    for (int y = 0; y < longeur; ++y) {
+        if (y == (longeur - 1)){
+            for (int x = 0; x < largeur*4; x=x+4) {
+                damier[y*largeur*4+x] = pointInitialLarg;
+                damier[y*largeur*4+x+1] = pointInitialLong;
+                pointInitialLarg = pointInitialLarg + espacePoint;
+            }
+        }
+        else if (y%2 == 1) {
+            for (int x = 0; x < largeur*4; x=x+4) {
+                damier[y*largeur*4+x] = pointInitialLarg;
+                damier[y*largeur*4+x+1] = pointInitialLong;
+
+                damier[y*largeur*4+x+2] = pointInitialLarg;
+                damier[y*largeur*4+x+3] = pointInitialLong - espacePoint;
+                pointInitialLarg = pointInitialLarg - espacePoint;
+            }
+        }
+        else if (y%2 == 0) {
+            for (int x = 0; x < largeur*4; x=x+4) {
+
+                damier[y*largeur*4+x+y] = pointInitialLarg;
+                damier[y*largeur*4+x+1] = pointInitialLong;
+
+                damier[y*largeur*4+x+2] = pointInitialLarg;
+                damier[y*largeur*4+x+3] = pointInitialLong - espacePoint;
+                pointInitialLarg = pointInitialLarg + espacePoint;
+            }
+        }
+         pointInitialLong = pointInitialLong - espacePoint;
+         std::cout<<pointInitialLarg<<std::endl;
+    }
+    return damier;
+}
 //! [4]
 
 //! [5]
@@ -150,12 +193,8 @@ void TriangleWindow::render()
 
     m_program->setUniformValue(m_matrixUniform, matrix);
 
-    GLfloat vertices[] = {
-        0.0f, 0.707f,
-        -0.5f, -0.5f,
-        0.5f, -0.5f
-    };
-
+    GLfloat* vertices = new GLfloat[16*16*2];
+    vertices = generateDamier(16,16);
     GLfloat colors[] = {
         1.0f, 0.0f, 1.0f,
         1.0f, 1.0f, 0.0f,
@@ -168,7 +207,7 @@ void TriangleWindow::render()
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 16*16*2);
 
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
